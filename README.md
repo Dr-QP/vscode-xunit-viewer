@@ -25,14 +25,18 @@ The extension is built and packaged with Bun. Use `bun install`, `bun run build`
 
 ## Usage
 
-1. Run your ROS 2 tests so XML results exist under `build/`.
+1. Run tests so XML results exist under `build/`.
 2. Open the command palette in VS Code.
 3. Run `XUnit: Open XUnit Test Results`.
 4. Re-run the command or use `XUnit: Refresh XUnit Test Results` after another test pass.
 
 ## Development
 
-Install `bun` `curl -fsSL https://bun.com/install | bash`
+Install `bun` 
+
+```sh
+curl -fsSL https://bun.com/install | bash
+```
 
 If you use Dev Containers, reopen the folder in the included container. It installs Bun and the system libraries commonly needed for VS Code extension authoring and extension-host test runs.
 
