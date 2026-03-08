@@ -1,6 +1,6 @@
 # Change Log
 
-All notable changes to the `ros2-xunit-viewer` extension are documented in this file.
+All notable changes to the `vscode-xunit-viewer` extension are documented in this file.
 
 ## [0.1.0] - 2026-03-07
 

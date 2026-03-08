@@ -1,6 +1,6 @@
 # ROS2 XUnit Viewer
 
-`ros2-xunit-viewer` packages the `xunit-viewer` npm library as a VS Code extension so ROS 2 developers can browse `colcon test` results without leaving the editor.
+`vscode-xunit-viewer` packages the `xunit-viewer` npm library as a VS Code extension so ROS 2 developers can browse `colcon test` results without leaving the editor.
 
 The extension is built and packaged with Bun. Use `bun install`, `bun run build`, `bun run test`, and `bun run package` for local development.
 
@@ -18,10 +18,10 @@ The extension is built and packaged with Bun. Use `bun install`, `bun run build`
 
 ## Settings
 
-- `ros2-xunit-viewer.resultsPath`: Folder that contains XUnit XML files. Defaults to `build`.
-- `ros2-xunit-viewer.outputPath`: Generated HTML path. Defaults to `build/xunit-index.html`.
-- `ros2-xunit-viewer.title`: Optional custom report title.
-- `ros2-xunit-viewer.ignorePatterns`: Filename patterns ignored while scanning the results folder.
+- `vscode-xunit-viewer.resultsPath`: Folder that contains XUnit XML files. Defaults to `build`.
+- `vscode-xunit-viewer.outputPath`: Generated HTML path. Defaults to `build/xunit-index.html`.
+- `vscode-xunit-viewer.title`: Optional custom report title.
+- `vscode-xunit-viewer.ignorePatterns`: Filename patterns ignored while scanning the results folder.
 
 ## Usage
 

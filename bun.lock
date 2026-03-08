@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "ros2-xunit-viewer",
+      "name": "vscode-xunit-viewer",
       "dependencies": {
         "xunit-viewer": "^10.6.1",
       },

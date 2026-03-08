@@ -24,7 +24,7 @@ function loadExtension({ vscodeMock, xunitViewerMock } = {}) {
   return require('../src/extension.js');
 }
 
-describe('ros2-xunit-viewer extension', () => {
+describe('vscode-xunit-viewer extension', () => {
   afterEach(() => {
     jest.clearAllMocks();
     jest.resetModules();
@@ -51,7 +51,7 @@ describe('ros2-xunit-viewer extension', () => {
     const extension = loadExtension({ vscodeMock });
     const options = extension.buildReportOptions(workspaceFolder);
 
-    expect(vscodeMock.workspace.getConfiguration).toHaveBeenCalledWith('ros2-xunit-viewer', workspaceFolder);
+    expect(vscodeMock.workspace.getConfiguration).toHaveBeenCalledWith('vscode-xunit-viewer', workspaceFolder);
     expect(options).toEqual({
       workspaceFolder,
       resultsPath: path.join('/tmp/demo-workspace', 'custom-results'),
@@ -142,8 +142,8 @@ describe('ros2-xunit-viewer extension', () => {
     const context = { subscriptions: [] };
 
     extension.activate(context);
-    await commandHandlers['ros2-xunit-viewer.openReport'](workspaceFolder.uri);
-    await commandHandlers['ros2-xunit-viewer.refreshReport']();
+    await commandHandlers['vscode-xunit-viewer.openReport'](workspaceFolder.uri);
+    await commandHandlers['vscode-xunit-viewer.refreshReport']();
 
     expect(context.subscriptions).toHaveLength(2);
     expect(vscodeMock.commands.registerCommand).toHaveBeenCalledTimes(2);
@@ -179,7 +179,7 @@ describe('ros2-xunit-viewer extension', () => {
     const extension = loadExtension({ vscodeMock });
     extension.activate({ subscriptions: [] });
 
-    await commandHandlers['ros2-xunit-viewer.refreshReport']();
+    await commandHandlers['vscode-xunit-viewer.refreshReport']();
 
     expect(vscodeMock.window.showInformationMessage).toHaveBeenCalledWith('Open XUnit test results first.');
 
