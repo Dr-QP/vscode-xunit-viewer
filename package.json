@@ -1,7 +1,7 @@
 {
   "name": "vscode-xunit-viewer",
   "publisher": "Dr-QP",
-  "displayName": "ROS2 XUnit Viewer",
+  "displayName": "XUnit Viewer",
   "description": "Generate and browse ROS 2 and colcon XUnit test results inside VS Code.",
   "version": "0.1.0",
   "license": "MIT",
@@ -16,6 +16,7 @@
     "ros",
     "ros2",
     "colcon",
+    "catkin",
     "xunit",
     "junit",
     "testing"
@@ -34,17 +35,17 @@
       {
         "command": "vscode-xunit-viewer.openReport",
         "title": "Open XUnit Test Results",
-        "category": "ROS2"
+        "category": "XUnit"
       },
       {
         "command": "vscode-xunit-viewer.refreshReport",
         "title": "Refresh XUnit Test Results",
-        "category": "ROS2"
+        "category": "XUnit"
       }
     ],
     "configuration": {
       "type": "object",
-      "title": "ROS2 XUnit Viewer",
+      "title": "XUnit Viewer",
       "properties": {
         "vscode-xunit-viewer.resultsPath": {
           "type": "string",

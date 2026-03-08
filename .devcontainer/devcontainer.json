@@ -1,5 +1,5 @@
 {
-  "name": "ROS2 XUnit Viewer Dev",
+  "name": "VSCode XUnit Viewer Dev",
   "build": {
     "dockerfile": "Dockerfile",
     "context": ".."

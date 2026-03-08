@@ -156,7 +156,7 @@ describe('vscode-xunit-viewer extension', () => {
     );
 
     expect(normalizedStatusBarCalls).toContainEqual([
-      'ROS2 XUnit Viewer refreshed reports/output.html',
+      'XUnit Viewer refreshed reports/output.html',
       4000,
     ]);
 

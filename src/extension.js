@@ -160,17 +160,17 @@ async function openReport(commandTarget) {
   const vscode = getVscode();
   const workspaceFolder = await pickWorkspaceFolder(commandTarget);
   if (!workspaceFolder) {
-    vscode.window.showErrorMessage('Open a workspace folder before viewing ROS 2 test results.');
+    vscode.window.showErrorMessage('Open a workspace folder before viewing XUnit test results.');
     return;
   }
 
   try {
     const report = await showReport(workspaceFolder);
     const relativeOutputPath = path.relative(workspaceFolder.uri.fsPath, report.outputPath);
-    vscode.window.setStatusBarMessage(`ROS2 XUnit Viewer refreshed ${relativeOutputPath}`, 4000);
+    vscode.window.setStatusBarMessage(`XUnit Viewer refreshed ${relativeOutputPath}`, 4000);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    vscode.window.showErrorMessage(`ROS2 XUnit Viewer failed: ${message}`);
+    vscode.window.showErrorMessage(`XUnit Viewer failed: ${message}`);
   }
 }
 

@@ -1,4 +1,4 @@
-# ROS2 XUnit Viewer
+# VSCode XUnit Viewer
 
 `vscode-xunit-viewer` packages the `xunit-viewer` npm library as a VS Code extension so ROS 2 developers can browse `colcon test` results without leaving the editor.
 
@@ -13,8 +13,8 @@ The extension is built and packaged with Bun. Use `bun install`, `bun run build`
 
 ## Commands
 
-- `ROS2: Open XUnit Test Results`
-- `ROS2: Refresh XUnit Test Results`
+- `XUnit: Open XUnit Test Results`
+- `XUnit: Refresh XUnit Test Results`
 
 ## Settings
 
@@ -27,8 +27,8 @@ The extension is built and packaged with Bun. Use `bun install`, `bun run build`
 
 1. Run your ROS 2 tests so XML results exist under `build/`.
 2. Open the command palette in VS Code.
-3. Run `ROS2: Open XUnit Test Results`.
-4. Re-run the command or use `ROS2: Refresh XUnit Test Results` after another test pass.
+3. Run `XUnit: Open XUnit Test Results`.
+4. Re-run the command or use `XUnit: Refresh XUnit Test Results` after another test pass.
 
 ## Development
 
