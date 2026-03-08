@@ -151,10 +151,14 @@ describe('vscode-xunit-viewer extension', () => {
     expect(panel.webview.html).toContain('Workspace Report');
     expect(panel.reveal).toHaveBeenCalledTimes(2);
     expect(xunitViewerMock).toHaveBeenCalledTimes(2);
-    expect(vscodeMock.window.setStatusBarMessage).toHaveBeenCalledWith(
+    const normalizedStatusBarCalls = vscodeMock.window.setStatusBarMessage.mock.calls.map(
+      ([message, duration]) => [message.replaceAll('\\', '/'), duration],
+    );
+
+    expect(normalizedStatusBarCalls).toContainEqual([
       'ROS2 XUnit Viewer refreshed reports/output.html',
       4000,
-    );
+    ]);
 
     extension.deactivate();
   });
