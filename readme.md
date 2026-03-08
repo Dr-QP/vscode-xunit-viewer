@@ -2,6 +2,8 @@
 
 `ros2-xunit-viewer` packages the `xunit-viewer` npm library as a VS Code extension so ROS 2 developers can browse `colcon test` results without leaving the editor.
 
+The extension is built and packaged with Bun. Use `bun install`, `bun run build`, `bun run test`, and `bun run package` for local development.
+
 ## Features
 
 - Generates a searchable HTML report from the workspace `build/` directory.
@@ -27,3 +29,12 @@
 2. Open the command palette in VS Code.
 3. Run `ROS2: Open XUnit Test Results`.
 4. Re-run the command or use `ROS2: Refresh XUnit Test Results` after another test pass.
+
+## Development
+
+Install `bun` `curl -fsSL https://bun.com/install | bash`
+
+- `bun install` installs dependencies and generates the Bun lockfile.
+- `bun run build` bundles the extension entrypoint into `dist/extension.js`.
+- `bun run test` rebuilds and runs the smoke test against the bundled output.
+- `bun run package` creates a VSIX using `bunx @vscode/vsce`.
