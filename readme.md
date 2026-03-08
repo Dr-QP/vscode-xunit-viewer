@@ -34,6 +34,8 @@ The extension is built and packaged with Bun. Use `bun install`, `bun run build`
 
 Install `bun` `curl -fsSL https://bun.com/install | bash`
 
+If you use Dev Containers, reopen the folder in the included container. It installs Bun and the system libraries commonly needed for VS Code extension authoring and extension-host test runs.
+
 - `bun install` installs dependencies and generates the Bun lockfile.
 - `bun run build` bundles the extension entrypoint into `dist/extension.js`.
 - `bun run test` rebuilds and runs the smoke test against the bundled output.
