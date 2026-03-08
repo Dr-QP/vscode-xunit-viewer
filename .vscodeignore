@@ -1,3 +1,9 @@
-test/**
-.tmp/**
-ros2-xunit-viewer-dev.vsix
+# Ignore all files by default
+**/**
+
+# Explicitly include necessary files for the extension
+!dist/**
+!LICENSE
+!README.md
+!CHANGELOG.md
+!package.json
