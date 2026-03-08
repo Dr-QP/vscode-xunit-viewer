@@ -38,5 +38,5 @@ If you use Dev Containers, reopen the folder in the included container. It insta
 
 - `bun install` installs dependencies and generates the Bun lockfile.
 - `bun run build` bundles the extension entrypoint into `dist/extension.js`.
-- `bun run test` rebuilds and runs the smoke test against the bundled output.
+- `bun run test` runs the Jest suite against the source module.
 - `bun run package` creates a VSIX using `bunx @vscode/vsce`.

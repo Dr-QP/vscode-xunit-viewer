@@ -12,7 +12,7 @@ let currentContext;
 let cachedXunitViewer;
 
 function getVscode() {
-  // Delay loading the VS Code host module so Node-side smoke tests can import this file.
+  // Delay loading the VS Code host module so Node-side tests can import this file.
   return require('vscode');
 }
 
