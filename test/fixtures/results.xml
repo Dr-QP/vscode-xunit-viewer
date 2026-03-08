@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="2" failures="1" skipped="0">
+  <testsuite name="Unit suite" tests="2" failures="1" skipped="0" time="0.003">
+    <testcase classname="smoke" name="passes" time="0.001" />
+    <testcase classname="smoke" name="fails" time="0.002">
+      <failure message="expected false to be true">stacktrace</failure>
+    </testcase>
+  </testsuite>
+</testsuites>

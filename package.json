@@ -1,0 +1,91 @@
+{
+  "name": "ros2-xunit-viewer",
+  "publisher": "Dr-QP",
+  "displayName": "ROS2 XUnit Viewer",
+  "description": "Generate and browse ROS 2 and colcon XUnit test results inside VS Code.",
+  "version": "0.1.0",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.94.0"
+  },
+  "categories": [
+    "Testing",
+    "Other"
+  ],
+  "keywords": [
+    "ros",
+    "ros2",
+    "colcon",
+    "xunit",
+    "junit",
+    "testing"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Dr-QP/vscode-extensions"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onCommand:ros2-xunit-viewer.openReport",
+    "onCommand:ros2-xunit-viewer.refreshReport",
+    "workspaceContains:**/package.xml"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "ros2-xunit-viewer.openReport",
+        "title": "Open XUnit Test Results",
+        "category": "ROS2"
+      },
+      {
+        "command": "ros2-xunit-viewer.refreshReport",
+        "title": "Refresh XUnit Test Results",
+        "category": "ROS2"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "ROS2 XUnit Viewer",
+      "properties": {
+        "ros2-xunit-viewer.resultsPath": {
+          "type": "string",
+          "default": "build",
+          "description": "Path to the folder that contains colcon and CTest XML results."
+        },
+        "ros2-xunit-viewer.outputPath": {
+          "type": "string",
+          "default": "build/xunit-index.html",
+          "description": "Path where the generated xunit-viewer HTML report is written."
+        },
+        "ros2-xunit-viewer.title": {
+          "type": "string",
+          "default": "",
+          "description": "Optional custom title for the generated test report. Leave empty to use the workspace name."
+        },
+        "ros2-xunit-viewer.ignorePatterns": {
+          "type": "array",
+          "default": [
+            "Test.xml",
+            "coverage.xml",
+            "package.xml"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Filename patterns ignored while scanning the results directory."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "package": "vsce package",
+    "package:dev": "vsce package -o ros2-xunit-viewer-dev.vsix",
+    "test": "node ./test/smoke.js"
+  },
+  "dependencies": {
+    "xunit-viewer": "^10.6.1"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.7.1"
+  }
+}

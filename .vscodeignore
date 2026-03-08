@@ -1,0 +1,3 @@
+test/**
+.tmp/**
+ros2-xunit-viewer-dev.vsix
