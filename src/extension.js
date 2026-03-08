@@ -9,10 +9,20 @@ const DEFAULT_IGNORE_PATTERNS = ['Test.xml', 'coverage.xml', 'package.xml'];
 
 let currentPanel;
 let currentContext;
+let cachedXunitViewer;
 
 function getVscode() {
   // Delay loading the VS Code host module so Node-side smoke tests can import this file.
   return require('vscode');
+}
+
+function getXunitViewer() {
+  if (!cachedXunitViewer) {
+    const xunitViewerModule = require('xunit-viewer');
+    cachedXunitViewer = xunitViewerModule.default ?? xunitViewerModule;
+  }
+
+  return cachedXunitViewer;
 }
 
 function pathExists(targetPath) {
@@ -77,8 +87,7 @@ function buildReportOptions(workspaceFolder) {
 }
 
 async function generateReport({ resultsPath, outputPath, title, ignorePatterns }) {
-  const xunitViewerModule = await import('xunit-viewer');
-  const xunitViewer = xunitViewerModule.default ?? xunitViewerModule;
+  const xunitViewer = getXunitViewer();
 
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
   await xunitViewer({
@@ -124,6 +133,7 @@ function ensurePanel(title) {
 }
 
 async function showReport(workspaceFolder) {
+  const vscode = getVscode();
   const reportOptions = buildReportOptions(workspaceFolder);
   const { resultsPath, outputPath, title } = reportOptions;
 
