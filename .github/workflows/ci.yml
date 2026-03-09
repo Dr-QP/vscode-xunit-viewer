@@ -41,6 +41,8 @@ jobs:
 
       - name: Compute VSIX artifact name
         shell: bash
+        env:
+          PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number || '' }}
         run: |
           if [[ -n "${GITHUB_HEAD_REF}" ]]; then
             ref_name="${GITHUB_HEAD_REF}"
@@ -50,6 +52,12 @@ jobs:
 
           ref_slug="$(printf '%s' "${ref_name}" | tr '[:upper:]' '[:lower:]' | sed -E 's#[^a-z0-9._-]+#-#g; s#^-+##; s#-+$##')"
           os_slug="$(printf '%s' "${RUNNER_OS}" | tr '[:upper:]' '[:lower:]')"
+
+          # If PR, prefix with "pr-<number>"
+          if [[ -n "${PULL_REQUEST_NUMBER}" ]]; then
+            ref_slug="pr-${PULL_REQUEST_NUMBER}-${ref_slug}"
+          fi
+
           echo "VSIX_NAME=vscode-xunit-viewer-${ref_slug}-${os_slug}.vsix" >> "${GITHUB_ENV}"
 
       - name: Install dependencies
