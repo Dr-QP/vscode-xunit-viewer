@@ -78,7 +78,7 @@
     }
   },
   "scripts": {
-    "build": "bun build ./src/extension.js --outdir ./dist --target node --format cjs --external vscode",
+    "build": "bun run ./scripts/build.mjs",
     "package": "bun run build && bunx @vscode/vsce package",
     "package:dev": "bun run build && bunx @vscode/vsce package -o vscode-xunit-viewer-dev.vsix",
     "test": "bunx jest --runInBand",
