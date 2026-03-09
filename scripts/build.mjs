@@ -7,48 +7,62 @@ const bundlePath = path.join(distDir, 'extension.js');
 const xunitCliDir = path.join(rootDir, 'node_modules', 'xunit-viewer', 'src', 'cli');
 const xunitIndexPath = path.join(xunitCliDir, 'index.html');
 const xunitStaticDir = path.join(xunitCliDir, 'static');
+const renderSourcePathPattern =
+  /__filename2 = import_url\.fileURLToPath\("file:\/\/[^"]*node_modules\/xunit-viewer\/src\/cli\/render\.js"\);/;
+const buildOptions = {
+  entrypoints: ['./src/extension.js'],
+  outdir: './dist',
+  target: 'node',
+  format: 'cjs',
+  external: ['vscode'],
+};
+
+await main();
+console.log('[build] bundle complete with embedded xunit-viewer static assets');
+
+async function main() {
+  await buildExtensionBundle();
+  await rewriteBundledRenderPath();
+  await copyStaticAssets();
+}
+
+async function buildExtensionBundle() {
+  const buildResult = await Bun.build(buildOptions);
+
+  if (!buildResult.success) {
+    for (const log of buildResult.logs) {
+      console.error(log);
+    }
+    fail('bun build failed');
+  }
+}
 
 function fail(message) {
   console.error(`[build] ${message}`);
   process.exit(1);
 }
 
-async function patchXunitViewerSourcePath(source) {
-  const renderSourcePathPattern =
-    /__filename2 = import_url\.fileURLToPath\("file:\/\/[^\"]*node_modules\/xunit-viewer\/src\/cli\/render\.js"\);/;
+async function rewriteBundledRenderPath() {
+  const bundleSource = await readFile(bundlePath, 'utf8');
+  const patchedBundleSource = patchXunitViewerSourcePath(bundleSource);
 
-  if (!renderSourcePathPattern.test(bundleSource)) {
+  await writeFile(bundlePath, patchedBundleSource, 'utf8');
+}
+
+function patchXunitViewerSourcePath(source) {
+  if (!renderSourcePathPattern.test(source)) {
     fail('failed to locate xunit-viewer render path patch target in bundle');
   }
 
-  bundleSource = bundleSource.replace(
+  return source.replace(
     renderSourcePathPattern,
     '__filename2 = __filename;',
   );
-  await writeFile(bundlePath, bundleSource, 'utf8');
 }
 
-const buildResult = await Bun.build({
-  entrypoints: ['./src/extension.js'],
-  outdir: './dist',
-  target: 'node',
-  format: 'cjs',
-  external: ['vscode'],
-});
-
-if (!buildResult.success) {
-  for (const log of buildResult.logs) {
-    console.error(log);
-  }
-  fail('bun build failed');
+async function copyStaticAssets() {
+  await mkdir(distDir, { recursive: true });
+  await cp(xunitIndexPath, path.join(distDir, 'index.html'));
+  await rm(path.join(distDir, 'static'), { recursive: true, force: true });
+  await cp(xunitStaticDir, path.join(distDir, 'static'), { recursive: true });
 }
-
-let bundleSource = await readFile(bundlePath, 'utf8');
-await patchXunitViewerSourcePath(bundleSource);
-
-await mkdir(distDir, { recursive: true });
-await cp(xunitIndexPath, path.join(distDir, 'index.html'));
-await rm(path.join(distDir, 'static'), { recursive: true, force: true });
-await cp(xunitStaticDir, path.join(distDir, 'static'), { recursive: true });
-
-console.log('[build] bundle complete with embedded xunit-viewer static assets');
