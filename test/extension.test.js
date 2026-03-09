@@ -189,4 +189,63 @@ describe('vscode-xunit-viewer extension', () => {
 
     extension.deactivate();
   });
+
+  test('openReport shows a friendly error when results path has no usable xunit XML files', async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'xunit-viewer-empty-'));
+    const workspaceFolder = {
+      name: 'demo-workspace',
+      uri: { fsPath: tempDir },
+    };
+    const emptyResultsPath = path.join(tempDir, 'empty-results');
+    const ignoredXmlPath = path.join(emptyResultsPath, 'package.xml');
+    const commandHandlers = {};
+    const xunitViewerMock = jest.fn();
+
+    await fs.mkdir(emptyResultsPath, { recursive: true });
+    await fs.writeFile(ignoredXmlPath, '<package />', 'utf8');
+
+    const vscodeMock = {
+      Uri: class Uri {},
+      ViewColumn: { One: 1 },
+      workspace: {
+        workspaceFolders: [workspaceFolder],
+        getWorkspaceFolder: jest.fn(() => workspaceFolder),
+        getConfiguration: jest.fn(() =>
+          createConfiguration({
+            resultsPath: emptyResultsPath,
+            outputPath: path.join(tempDir, 'reports', 'output.html'),
+            title: '',
+            ignorePatterns: ['package.xml'],
+          }),
+        ),
+      },
+      window: {
+        createWebviewPanel: jest.fn(),
+        setStatusBarMessage: jest.fn(),
+        showErrorMessage: jest.fn(),
+        showInformationMessage: jest.fn(),
+        showWorkspaceFolderPick: jest.fn(),
+      },
+      commands: {
+        registerCommand: jest.fn((commandId, handler) => {
+          commandHandlers[commandId] = handler;
+          return { dispose: jest.fn() };
+        }),
+      },
+    };
+
+    const extension = loadExtension({ vscodeMock, xunitViewerMock });
+    extension.activate({ subscriptions: [] });
+
+    await commandHandlers['vscode-xunit-viewer.openReport'](workspaceFolder.uri);
+
+    expect(xunitViewerMock).not.toHaveBeenCalled();
+    expect(vscodeMock.window.createWebviewPanel).not.toHaveBeenCalled();
+    expect(vscodeMock.window.setStatusBarMessage).not.toHaveBeenCalled();
+    expect(vscodeMock.window.showErrorMessage).toHaveBeenCalledWith(
+      `XUnit Viewer failed: No usable xUnit XML files were found in ${emptyResultsPath}. Run colcon tests first or update vscode-xunit-viewer.resultsPath or vscode-xunit-viewer.ignorePatterns.`,
+    );
+
+    extension.deactivate();
+  });
 });

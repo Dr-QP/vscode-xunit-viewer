@@ -32,6 +32,37 @@ function pathExists(targetPath) {
     .catch(() => false);
 }
 
+function matchesIgnorePattern(targetPath, ignorePatterns) {
+  return ignorePatterns.some((pattern) => targetPath.includes(pattern) || new RegExp(pattern).test(targetPath));
+}
+
+async function collectResultFiles(resultsPath, ignorePatterns) {
+  const stats = await fs.stat(resultsPath);
+
+  if (!stats.isDirectory()) {
+    return resultsPath.endsWith('.xml') && !matchesIgnorePattern(resultsPath, ignorePatterns)
+      ? [resultsPath]
+      : [];
+  }
+
+  const entries = await fs.readdir(resultsPath, { withFileTypes: true });
+  const resultFiles = [];
+
+  for (const entry of entries) {
+    const entryPath = path.join(resultsPath, entry.name);
+    if (entry.isDirectory()) {
+      resultFiles.push(...(await collectResultFiles(entryPath, ignorePatterns)));
+      continue;
+    }
+
+    if (entryPath.endsWith('.xml') && !matchesIgnorePattern(entryPath, ignorePatterns)) {
+      resultFiles.push(entryPath);
+    }
+  }
+
+  return resultFiles;
+}
+
 function resolveWorkspacePath(workspaceRoot, configuredPath, fallbackPath) {
   const selectedPath = configuredPath && configuredPath.trim() !== '' ? configuredPath : fallbackPath;
   return path.isAbsolute(selectedPath)
@@ -135,11 +166,18 @@ function ensurePanel(title) {
 async function showReport(workspaceFolder) {
   const vscode = getVscode();
   const reportOptions = buildReportOptions(workspaceFolder);
-  const { resultsPath, outputPath, title } = reportOptions;
+  const { resultsPath, outputPath, title, ignorePatterns } = reportOptions;
 
   if (!(await pathExists(resultsPath))) {
     throw new Error(
       `Results path does not exist: ${resultsPath}. Run colcon tests first or update ${EXTENSION_ID}.resultsPath.`,
+    );
+  }
+
+  const resultFiles = await collectResultFiles(resultsPath, ignorePatterns);
+  if (resultFiles.length === 0) {
+    throw new Error(
+      `No usable xUnit XML files were found in ${resultsPath}. Run colcon tests first or update ${EXTENSION_ID}.resultsPath or ${EXTENSION_ID}.ignorePatterns.`,
     );
   }
 
