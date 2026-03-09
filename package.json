@@ -1,7 +1,7 @@
 {
-  "name": "ros2-xunit-viewer",
+  "name": "vscode-xunit-viewer",
   "publisher": "Dr-QP",
-  "displayName": "ROS2 XUnit Viewer",
+  "displayName": "XUnit Viewer",
   "description": "Generate and browse ROS 2 and colcon XUnit test results inside VS Code.",
   "version": "0.1.0",
   "license": "MIT",
@@ -16,6 +16,7 @@
     "ros",
     "ros2",
     "colcon",
+    "catkin",
     "xunit",
     "junit",
     "testing"
@@ -24,45 +25,44 @@
     "type": "git",
     "url": "https://github.com/Dr-QP/vscode-extensions"
   },
+  "packageManager": "bun@1.3.10",
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onCommand:ros2-xunit-viewer.openReport",
-    "onCommand:ros2-xunit-viewer.refreshReport",
     "workspaceContains:**/package.xml"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "ros2-xunit-viewer.openReport",
+        "command": "vscode-xunit-viewer.openReport",
         "title": "Open XUnit Test Results",
-        "category": "ROS2"
+        "category": "XUnit"
       },
       {
-        "command": "ros2-xunit-viewer.refreshReport",
+        "command": "vscode-xunit-viewer.refreshReport",
         "title": "Refresh XUnit Test Results",
-        "category": "ROS2"
+        "category": "XUnit"
       }
     ],
     "configuration": {
       "type": "object",
-      "title": "ROS2 XUnit Viewer",
+      "title": "XUnit Viewer",
       "properties": {
-        "ros2-xunit-viewer.resultsPath": {
+        "vscode-xunit-viewer.resultsPath": {
           "type": "string",
           "default": "build",
           "description": "Path to the folder that contains colcon and CTest XML results."
         },
-        "ros2-xunit-viewer.outputPath": {
+        "vscode-xunit-viewer.outputPath": {
           "type": "string",
           "default": "build/xunit-index.html",
           "description": "Path where the generated xunit-viewer HTML report is written."
         },
-        "ros2-xunit-viewer.title": {
+        "vscode-xunit-viewer.title": {
           "type": "string",
           "default": "",
           "description": "Optional custom title for the generated test report. Leave empty to use the workspace name."
         },
-        "ros2-xunit-viewer.ignorePatterns": {
+        "vscode-xunit-viewer.ignorePatterns": {
           "type": "array",
           "default": [
             "Test.xml",
@@ -78,14 +78,17 @@
     }
   },
   "scripts": {
-    "package": "vsce package",
-    "package:dev": "vsce package -o ros2-xunit-viewer-dev.vsix",
-    "test": "node ./test/smoke.js"
+    "build": "bun run ./scripts/build.mjs",
+    "package": "bun run build && bunx @vscode/vsce package",
+    "package:dev": "bun run build && bunx @vscode/vsce package -o vscode-xunit-viewer-dev.vsix",
+    "test": "bunx jest --runInBand",
+    "test:watch": "bunx jest --watch"
   },
   "dependencies": {
     "xunit-viewer": "^10.6.1"
   },
   "devDependencies": {
-    "@vscode/vsce": "^3.7.1"
+    "@vscode/vsce": "^3.7.1",
+    "jest": "^30.2.0"
   }
 }

@@ -1,18 +1,28 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 
-const EXTENSION_ID = 'ros2-xunit-viewer';
-const VIEW_TYPE = 'ros2-xunit-viewer.report';
+const EXTENSION_ID = 'vscode-xunit-viewer';
+const VIEW_TYPE = 'vscode-xunit-viewer.report';
 const DEFAULT_RESULTS_PATH = 'build';
 const DEFAULT_OUTPUT_PATH = path.join('build', 'xunit-index.html');
 const DEFAULT_IGNORE_PATTERNS = ['Test.xml', 'coverage.xml', 'package.xml'];
 
 let currentPanel;
 let currentContext;
+let cachedXunitViewer;
 
 function getVscode() {
-  // Delay loading the VS Code host module so Node-side smoke tests can import this file.
+  // Delay loading the VS Code host module so Node-side tests can import this file.
   return require('vscode');
+}
+
+function getXunitViewer() {
+  if (!cachedXunitViewer) {
+    const xunitViewerModule = require('xunit-viewer');
+    cachedXunitViewer = xunitViewerModule.default ?? xunitViewerModule;
+  }
+
+  return cachedXunitViewer;
 }
 
 function pathExists(targetPath) {
@@ -20,6 +30,37 @@ function pathExists(targetPath) {
     .access(targetPath)
     .then(() => true)
     .catch(() => false);
+}
+
+function matchesIgnorePattern(targetPath, ignorePatterns) {
+  return ignorePatterns.some((pattern) => targetPath.includes(pattern) || new RegExp(pattern).test(targetPath));
+}
+
+async function collectResultFiles(resultsPath, ignorePatterns) {
+  const stats = await fs.stat(resultsPath);
+
+  if (!stats.isDirectory()) {
+    return resultsPath.endsWith('.xml') && !matchesIgnorePattern(resultsPath, ignorePatterns)
+      ? [resultsPath]
+      : [];
+  }
+
+  const entries = await fs.readdir(resultsPath, { withFileTypes: true });
+  const resultFiles = [];
+
+  for (const entry of entries) {
+    const entryPath = path.join(resultsPath, entry.name);
+    if (entry.isDirectory()) {
+      resultFiles.push(...(await collectResultFiles(entryPath, ignorePatterns)));
+      continue;
+    }
+
+    if (entryPath.endsWith('.xml') && !matchesIgnorePattern(entryPath, ignorePatterns)) {
+      resultFiles.push(entryPath);
+    }
+  }
+
+  return resultFiles;
 }
 
 function resolveWorkspacePath(workspaceRoot, configuredPath, fallbackPath) {
@@ -77,8 +118,7 @@ function buildReportOptions(workspaceFolder) {
 }
 
 async function generateReport({ resultsPath, outputPath, title, ignorePatterns }) {
-  const xunitViewerModule = await import('xunit-viewer');
-  const xunitViewer = xunitViewerModule.default ?? xunitViewerModule;
+  const xunitViewer = getXunitViewer();
 
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
   await xunitViewer({
@@ -124,12 +164,20 @@ function ensurePanel(title) {
 }
 
 async function showReport(workspaceFolder) {
+  const vscode = getVscode();
   const reportOptions = buildReportOptions(workspaceFolder);
-  const { resultsPath, outputPath, title } = reportOptions;
+  const { resultsPath, outputPath, title, ignorePatterns } = reportOptions;
 
   if (!(await pathExists(resultsPath))) {
     throw new Error(
       `Results path does not exist: ${resultsPath}. Run colcon tests first or update ${EXTENSION_ID}.resultsPath.`,
+    );
+  }
+
+  const resultFiles = await collectResultFiles(resultsPath, ignorePatterns);
+  if (resultFiles.length === 0) {
+    throw new Error(
+      `No usable xUnit XML files were found in ${resultsPath}. Run colcon tests first or update ${EXTENSION_ID}.resultsPath or ${EXTENSION_ID}.ignorePatterns.`,
     );
   }
 
@@ -150,17 +198,17 @@ async function openReport(commandTarget) {
   const vscode = getVscode();
   const workspaceFolder = await pickWorkspaceFolder(commandTarget);
   if (!workspaceFolder) {
-    vscode.window.showErrorMessage('Open a workspace folder before viewing ROS 2 test results.');
+    vscode.window.showErrorMessage('Open a workspace folder before viewing XUnit test results.');
     return;
   }
 
   try {
     const report = await showReport(workspaceFolder);
     const relativeOutputPath = path.relative(workspaceFolder.uri.fsPath, report.outputPath);
-    vscode.window.setStatusBarMessage(`ROS2 XUnit Viewer refreshed ${relativeOutputPath}`, 4000);
+    vscode.window.setStatusBarMessage(`XUnit Viewer refreshed ${relativeOutputPath}`, 4000);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    vscode.window.showErrorMessage(`ROS2 XUnit Viewer failed: ${message}`);
+    vscode.window.showErrorMessage(`XUnit Viewer failed: ${message}`);
   }
 }
 

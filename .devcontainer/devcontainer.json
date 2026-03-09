@@ -1,0 +1,22 @@
+{
+  "name": "VSCode XUnit Viewer Dev",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "node",
+  "postCreateCommand": "bun install",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.eol": "\n"
+      },
+      "extensions": [
+        "ms-vscode.vscode-extension-pack",
+        "dbaeumer.vscode-eslint",
+        "github.vscode-pull-request-github"
+      ]
+    }
+  }
+}
