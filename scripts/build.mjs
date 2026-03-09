@@ -8,12 +8,24 @@ const xunitCliDir = path.join(rootDir, 'node_modules', 'xunit-viewer', 'src', 'c
 const xunitIndexPath = path.join(xunitCliDir, 'index.html');
 const xunitStaticDir = path.join(xunitCliDir, 'static');
 
-const renderSourcePathPattern =
-  /__filename2 = import_url\.fileURLToPath\("file:\/\/[^\"]*node_modules\/xunit-viewer\/src\/cli\/render\.js"\);/;
-
 function fail(message) {
   console.error(`[build] ${message}`);
   process.exit(1);
+}
+
+async function patchXunitViewerSourcePath(source) {
+  const renderSourcePathPattern =
+    /__filename2 = import_url\.fileURLToPath\("file:\/\/[^\"]*node_modules\/xunit-viewer\/src\/cli\/render\.js"\);/;
+
+  if (!renderSourcePathPattern.test(bundleSource)) {
+    fail('failed to locate xunit-viewer render path patch target in bundle');
+  }
+
+  bundleSource = bundleSource.replace(
+    renderSourcePathPattern,
+    '__filename2 = __filename;',
+  );
+  await writeFile(bundlePath, bundleSource, 'utf8');
 }
 
 const buildResult = await Bun.build({
@@ -32,16 +44,7 @@ if (!buildResult.success) {
 }
 
 let bundleSource = await readFile(bundlePath, 'utf8');
-
-if (!renderSourcePathPattern.test(bundleSource)) {
-  fail('failed to locate xunit-viewer render path patch target in bundle');
-}
-
-bundleSource = bundleSource.replace(
-  renderSourcePathPattern,
-  '__filename2 = __filename;',
-);
-await writeFile(bundlePath, bundleSource, 'utf8');
+await patchXunitViewerSourcePath(bundleSource);
 
 await mkdir(distDir, { recursive: true });
 await cp(xunitIndexPath, path.join(distDir, 'index.html'));
