@@ -10,7 +10,7 @@ const xunitStaticDir = path.join(xunitCliDir, 'static');
 const renderSourcePathPattern =
   /__filename2 = import_url\.fileURLToPath\("file:\/\/[^"]*node_modules\/xunit-viewer\/src\/cli\/render\.js"\);/;
 const buildOptions = {
-  entrypoints: ['./src/extension.js'],
+  entrypoints: ['./src/extension.ts'],
   outdir: './dist',
   target: 'node',
   format: 'cjs',

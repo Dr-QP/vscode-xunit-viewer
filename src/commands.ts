@@ -1,15 +1,21 @@
-const path = require('node:path');
+import path from 'node:path';
+import type { Uri, WorkspaceFolder } from 'vscode';
 
-const { EXTENSION_ID } = require('./constants');
-const { getVscode } = require('./vscodeHost');
-const { buildReportOptions } = require('./config');
-const { pathExists, collectResultFiles } = require('./resultFiles');
-const { generateReport } = require('./reportGenerator');
-const { ensurePanel, resetPanel } = require('./panel');
+import { EXTENSION_ID } from './constants';
+import { getVscode } from './vscodeHost';
+import { buildReportOptions } from './config';
+import { pathExists, collectResultFiles } from './resultFiles';
+import { generateReport, type GeneratedReport } from './reportGenerator';
+import { ensurePanel, resetPanel } from './panel';
 
-let currentContext;
+interface ReportContext {
+  workspaceFolder: WorkspaceFolder;
+  outputPath: string;
+}
 
-async function pickWorkspaceFolder(commandTarget) {
+let currentContext: ReportContext | undefined;
+
+async function pickWorkspaceFolder(commandTarget: Uri | unknown): Promise<WorkspaceFolder | undefined> {
   const vscode = getVscode();
   const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
   if (workspaceFolders.length === 0) {
@@ -29,7 +35,7 @@ async function pickWorkspaceFolder(commandTarget) {
   });
 }
 
-async function showReport(workspaceFolder) {
+async function showReport(workspaceFolder: WorkspaceFolder): Promise<GeneratedReport> {
   const vscode = getVscode();
   const reportOptions = buildReportOptions(workspaceFolder);
   const { resultsPath, outputPath, title, ignorePatterns } = reportOptions;
@@ -62,7 +68,7 @@ async function showReport(workspaceFolder) {
   return report;
 }
 
-async function openReport(commandTarget) {
+export async function openReport(commandTarget?: Uri | unknown): Promise<void> {
   const vscode = getVscode();
   const workspaceFolder = await pickWorkspaceFolder(commandTarget);
   if (!workspaceFolder) {
@@ -80,7 +86,7 @@ async function openReport(commandTarget) {
   }
 }
 
-async function refreshReport() {
+export async function refreshReport(): Promise<void> {
   const vscode = getVscode();
   if (!currentContext) {
     vscode.window.showInformationMessage('Open XUnit test results first.');
@@ -90,9 +96,7 @@ async function refreshReport() {
   await openReport(currentContext.workspaceFolder.uri);
 }
 
-function resetState() {
+export function resetState(): void {
   currentContext = undefined;
   resetPanel();
 }
-
-module.exports = { openReport, refreshReport, resetState };
