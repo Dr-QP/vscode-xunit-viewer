@@ -32,35 +32,25 @@ function pathExists(targetPath) {
     .catch(() => false);
 }
 
-function matchesIgnorePattern(targetPath, ignorePatterns) {
-  return ignorePatterns.some((pattern) => targetPath.includes(pattern) || new RegExp(pattern).test(targetPath));
-}
-
 async function collectResultFiles(resultsPath, ignorePatterns) {
+  const vscode = getVscode();
   const stats = await fs.stat(resultsPath);
+  const searchBase = stats.isDirectory() ? resultsPath : path.dirname(resultsPath);
+  const includeGlob = stats.isDirectory() ? '**/*.xml' : path.basename(resultsPath);
 
-  if (!stats.isDirectory()) {
-    return resultsPath.endsWith('.xml') && !matchesIgnorePattern(resultsPath, ignorePatterns)
-      ? [resultsPath]
-      : [];
-  }
+  const excludeGlob = ignorePatterns.length > 0
+    ? new vscode.RelativePattern(searchBase, `**/{${ignorePatterns.join(',')}}`)
+    : null;
 
-  const entries = await fs.readdir(resultsPath, { withFileTypes: true });
-  const resultFiles = [];
+  const uris = await vscode.workspace.findFiles(
+    new vscode.RelativePattern(searchBase, includeGlob),
+    excludeGlob,
+  );
 
-  for (const entry of entries) {
-    const entryPath = path.join(resultsPath, entry.name);
-    if (entry.isDirectory()) {
-      resultFiles.push(...(await collectResultFiles(entryPath, ignorePatterns)));
-      continue;
-    }
-
-    if (entryPath.endsWith('.xml') && !matchesIgnorePattern(entryPath, ignorePatterns)) {
-      resultFiles.push(entryPath);
-    }
-  }
-
-  return resultFiles;
+  return uris
+    .map((uri) => uri.fsPath)
+    .filter((filePath) => filePath.endsWith('.xml'))
+    .sort();
 }
 
 function resolveWorkspacePath(workspaceRoot, configuredPath, fallbackPath) {

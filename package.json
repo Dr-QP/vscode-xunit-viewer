@@ -75,7 +75,7 @@
           "items": {
             "type": "string"
           },
-          "description": "Filename patterns ignored while scanning the results directory."
+          "description": "Glob patterns ignored while scanning the results directory (matched relative to the results path)."
         }
       }
     }
