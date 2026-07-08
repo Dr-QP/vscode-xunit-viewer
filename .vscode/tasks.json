@@ -1,0 +1,46 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "bun run build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "dependsOn": [
+        "install"
+      ]
+    },
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "bunx run test",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent"
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "dependsOn": [
+        "install"
+      ]
+    },
+    {
+      "label": "install",
+      "type": "shell",
+      "command": "bun install",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent"
+      }
+    }
+  ]
+}

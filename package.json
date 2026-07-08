@@ -3,7 +3,7 @@
   "publisher": "Dr-QP",
   "displayName": "XUnit Viewer",
   "description": "Generate and browse ROS 2 and colcon XUnit test results inside VS Code.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "engines": {
     "vscode": "^1.94.0"
@@ -27,6 +27,9 @@
   },
   "packageManager": "bun@1.3.10",
   "main": "./dist/extension.js",
+  "extensionKind": [
+    "workspace"
+  ],
   "activationEvents": [
     "workspaceContains:**/package.xml"
   ],
@@ -72,7 +75,7 @@
           "items": {
             "type": "string"
           },
-          "description": "Filename patterns ignored while scanning the results directory."
+          "description": "Glob patterns ignored while scanning the results directory (matched relative to the results path)."
         }
       }
     }
@@ -88,7 +91,7 @@
     "xunit-viewer": "^10.6.1"
   },
   "devDependencies": {
-    "@vscode/vsce": "^3.7.1",
+    "@vscode/vsce": "^3.9.2",
     "jest": "^30.2.0"
   }
 }

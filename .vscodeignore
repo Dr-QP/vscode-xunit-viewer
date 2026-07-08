@@ -3,6 +3,7 @@
 
 # Explicitly include necessary files for the extension
 !dist/**
+dist/**/*.js.map
 !LICENSE
 !README.md
 !CHANGELOG.md
