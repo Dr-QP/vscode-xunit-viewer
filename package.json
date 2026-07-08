@@ -83,13 +83,13 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "bun run typecheck && bun run ./scripts/build.mjs",
-    "package": "bun run build && bunx @vscode/vsce package",
-    "package:dev": "bun run build && bunx @vscode/vsce package -o vscode-xunit-viewer-dev.vsix",
+    "package": "bun run build && bunx @vscode/vsce package --no-dependencies",
+    "package:dev": "bun run build && bunx @vscode/vsce package --no-dependencies -o vscode-xunit-viewer-dev.vsix",
     "test": "bunx jest --runInBand",
     "test:watch": "bunx jest --watch"
   },
   "dependencies": {
-    "xunit-viewer": "^10.6.1"
+    "xunit-viewer": "file:./xunit-viewer"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
