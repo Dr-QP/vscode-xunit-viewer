@@ -15,6 +15,7 @@ const buildOptions = {
   target: 'node',
   format: 'cjs',
   external: ['vscode'],
+  sourcemap: 'linked',
 };
 
 await main();
