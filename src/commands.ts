@@ -1,5 +1,5 @@
 import path from 'node:path';
-import type { Uri, WorkspaceFolder } from 'vscode';
+import type { ConfigurationChangeEvent, Uri, WorkspaceFolder } from 'vscode';
 
 import { EXTENSION_ID } from './constants';
 import { getVscode } from './vscodeHost';
@@ -94,6 +94,19 @@ export async function refreshReport(): Promise<void> {
   }
 
   await openReport(currentContext.workspaceFolder.uri);
+}
+
+export async function handleConfigurationChange(event: ConfigurationChangeEvent): Promise<void> {
+  if (!currentContext) {
+    return;
+  }
+
+  const { workspaceFolder } = currentContext;
+  if (!event.affectsConfiguration(EXTENSION_ID, workspaceFolder.uri)) {
+    return;
+  }
+
+  await openReport(workspaceFolder.uri);
 }
 
 export function resetState(): void {
