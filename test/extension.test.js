@@ -110,10 +110,19 @@ describe('vscode-xunit-viewer extension', () => {
     });
     const vscodeMock = {
       Uri: class Uri {},
+      RelativePattern: class RelativePattern {
+        constructor(base, pattern) {
+          this.base = base;
+          this.pattern = pattern;
+        }
+      },
       ViewColumn: { One: 1 },
       workspace: {
         workspaceFolders: [workspaceFolder],
         getWorkspaceFolder: jest.fn(() => workspaceFolder),
+        findFiles: jest.fn(async () => [
+          { fsPath: path.join(__dirname, 'fixtures', 'results.xml') },
+        ]),
         getConfiguration: jest.fn(() =>
           createConfiguration({
             resultsPath: path.join(__dirname, 'fixtures'),
@@ -206,10 +215,17 @@ describe('vscode-xunit-viewer extension', () => {
 
     const vscodeMock = {
       Uri: class Uri {},
+      RelativePattern: class RelativePattern {
+        constructor(base, pattern) {
+          this.base = base;
+          this.pattern = pattern;
+        }
+      },
       ViewColumn: { One: 1 },
       workspace: {
         workspaceFolders: [workspaceFolder],
         getWorkspaceFolder: jest.fn(() => workspaceFolder),
+        findFiles: jest.fn(async () => []),
         getConfiguration: jest.fn(() =>
           createConfiguration({
             resultsPath: emptyResultsPath,
