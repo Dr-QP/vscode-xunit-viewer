@@ -71,7 +71,7 @@ jobs:
 
       - name: Package VSIX
         shell: bash
-        run: bunx @vscode/vsce package -o "${VSIX_NAME}"
+        run: bun run package -o "${VSIX_NAME}"
 
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v4
