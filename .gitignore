@@ -2,3 +2,6 @@ dist/
 node_modules/
 test/artifacts/
 *.vsix
+!/.vscode/extensions.json
+!/.vscode/launch.json
+!/.vscode/tasks.json
