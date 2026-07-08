@@ -15,8 +15,14 @@
       "extensions": [
         "ms-vscode.vscode-extension-pack",
         "dbaeumer.vscode-eslint",
-        "github.vscode-pull-request-github"
+        "github.vscode-pull-request-github",
+        "Anthropic.claude-code",
+        "eamodio.gitlens",
+        "mhutchie.git-graph"
       ]
     }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1.1.0": {}
   }
 }

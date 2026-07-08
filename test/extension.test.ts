@@ -121,6 +121,7 @@ describe('vscode-xunit-viewer extension', () => {
       onDidDispose: jest.fn(),
     };
     const commandHandlers: Record<string, (...args: unknown[]) => Promise<void>> = {};
+    let configurationChangeHandler: ((event: unknown) => Promise<void>) | undefined;
     const xunitViewerMock = jest.fn(async ({ output, title }: { output: string; title: string }) => {
       await fs.mkdir(path.dirname(output), { recursive: true });
       await fs.writeFile(output, `<html><body><h1>${title}</h1></body></html>`, 'utf8');
@@ -137,6 +138,10 @@ describe('vscode-xunit-viewer extension', () => {
       workspace: {
         workspaceFolders: [workspaceFolder],
         getWorkspaceFolder: jest.fn(() => workspaceFolder),
+        onDidChangeConfiguration: jest.fn((handler: (event: unknown) => Promise<void>) => {
+          configurationChangeHandler = handler;
+          return { dispose: jest.fn() };
+        }),
         findFiles: jest.fn(async () => [
           { fsPath: path.join(__dirname, 'fixtures', 'results.xml') },
         ]),
@@ -171,12 +176,21 @@ describe('vscode-xunit-viewer extension', () => {
     await commandHandlers['vscode-xunit-viewer.openReport']!(workspaceFolder.uri);
     await commandHandlers['vscode-xunit-viewer.refreshReport']!();
 
-    expect(context.subscriptions).toHaveLength(2);
+    expect(context.subscriptions).toHaveLength(3);
     expect(vscodeMock.commands.registerCommand).toHaveBeenCalledTimes(2);
     expect(vscodeMock.window.createWebviewPanel).toHaveBeenCalledTimes(1);
     expect(panel.webview.html).toContain('Workspace Report');
     expect(panel.reveal).toHaveBeenCalledTimes(2);
     expect(xunitViewerMock).toHaveBeenCalledTimes(2);
+
+    const unrelatedChange = { affectsConfiguration: jest.fn((_section: string, _scope?: unknown) => false) };
+    await configurationChangeHandler!(unrelatedChange);
+    expect(unrelatedChange.affectsConfiguration).toHaveBeenCalledWith('vscode-xunit-viewer', workspaceFolder.uri);
+    expect(xunitViewerMock).toHaveBeenCalledTimes(2);
+
+    await configurationChangeHandler!({ affectsConfiguration: jest.fn(() => true) });
+    expect(xunitViewerMock).toHaveBeenCalledTimes(3);
+    expect(panel.reveal).toHaveBeenCalledTimes(3);
     const normalizedStatusBarCalls = vscodeMock.window.setStatusBarMessage.mock.calls.map(
       ([message, duration]) => [(message as string).replaceAll('\\', '/'), duration],
     );
@@ -191,9 +205,14 @@ describe('vscode-xunit-viewer extension', () => {
 
   test('refresh command shows guidance when no report has been opened', async () => {
     const commandHandlers: Record<string, (...args: unknown[]) => Promise<void>> = {};
+    let configurationChangeHandler: ((event: unknown) => Promise<void>) | undefined;
     const vscodeMock = {
       workspace: {
         workspaceFolders: [],
+        onDidChangeConfiguration: jest.fn((handler: (event: unknown) => Promise<void>) => {
+          configurationChangeHandler = handler;
+          return { dispose: jest.fn() };
+        }),
       },
       window: {
         showInformationMessage: jest.fn(),
@@ -212,6 +231,10 @@ describe('vscode-xunit-viewer extension', () => {
     await commandHandlers['vscode-xunit-viewer.refreshReport']!();
 
     expect(vscodeMock.window.showInformationMessage).toHaveBeenCalledWith('Open XUnit test results first.');
+
+    const configurationChange = { affectsConfiguration: jest.fn(() => true) };
+    await configurationChangeHandler!(configurationChange);
+    expect(configurationChange.affectsConfiguration).not.toHaveBeenCalled();
 
     extension.deactivate();
   });
@@ -242,6 +265,7 @@ describe('vscode-xunit-viewer extension', () => {
       workspace: {
         workspaceFolders: [workspaceFolder],
         getWorkspaceFolder: jest.fn(() => workspaceFolder),
+        onDidChangeConfiguration: jest.fn(() => ({ dispose: jest.fn() })),
         findFiles: jest.fn(async () => []),
         getConfiguration: jest.fn(() =>
           createConfiguration({

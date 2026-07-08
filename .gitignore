@@ -1,3 +1,5 @@
+.DS_Store
+
 dist/
 node_modules/
 test/artifacts/
@@ -5,3 +7,4 @@ test/artifacts/
 !/.vscode/extensions.json
 !/.vscode/launch.json
 !/.vscode/tasks.json
+
