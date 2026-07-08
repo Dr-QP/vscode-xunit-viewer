@@ -1,16 +1,25 @@
-const fs = require('node:fs/promises');
-const os = require('node:os');
-const path = require('node:path');
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 
-function createConfiguration(values = {}) {
+import { afterEach, describe, expect, jest, test } from '@jest/globals';
+
+type Extension = typeof import('../src/extension');
+
+function createConfiguration(values: Record<string, unknown> = {}) {
   return {
-    get(key, fallbackValue) {
+    get(key: string, fallbackValue: unknown) {
       return Object.prototype.hasOwnProperty.call(values, key) ? values[key] : fallbackValue;
     },
   };
 }
 
-function loadExtension({ vscodeMock, xunitViewerMock } = {}) {
+interface LoadExtensionOptions {
+  vscodeMock?: unknown;
+  xunitViewerMock?: unknown;
+}
+
+function loadExtension({ vscodeMock, xunitViewerMock }: LoadExtensionOptions = {}): Extension {
   jest.resetModules();
 
   if (vscodeMock) {
@@ -21,7 +30,7 @@ function loadExtension({ vscodeMock, xunitViewerMock } = {}) {
     jest.doMock('xunit-viewer', () => xunitViewerMock);
   }
 
-  return require('../src/extension.js');
+  return require('../src/extension') as Extension;
 }
 
 describe('vscode-xunit-viewer extension', () => {
@@ -37,7 +46,7 @@ describe('vscode-xunit-viewer extension', () => {
     };
     const vscodeMock = {
       workspace: {
-        getConfiguration: jest.fn(() =>
+        getConfiguration: jest.fn((_section: string, _scope: unknown) =>
           createConfiguration({
             resultsPath: 'custom-results',
             outputPath: 'reports/output.html',
@@ -49,7 +58,7 @@ describe('vscode-xunit-viewer extension', () => {
     };
 
     const extension = loadExtension({ vscodeMock });
-    const options = extension.buildReportOptions(workspaceFolder);
+    const options = extension.buildReportOptions(workspaceFolder as never);
 
     expect(vscodeMock.workspace.getConfiguration).toHaveBeenCalledWith('vscode-xunit-viewer', workspaceFolder);
     expect(options).toEqual({
@@ -64,7 +73,15 @@ describe('vscode-xunit-viewer extension', () => {
   test('generateReport writes HTML output using the xunit-viewer adapter', async () => {
     const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'xunit-viewer-report-'));
     const outputPath = path.join(tempDir, 'nested', 'fixture-report.html');
-    const xunitViewerMock = jest.fn(async ({ results, output, title, ignore, server, script }) => {
+    interface XunitViewerArgs {
+      results: string;
+      output: string;
+      title: string;
+      ignore: string[];
+      server: boolean;
+      script: boolean;
+    }
+    const xunitViewerMock = jest.fn(async ({ results, output, title, ignore, server, script }: XunitViewerArgs) => {
       expect(results).toBe(path.join(__dirname, 'fixtures'));
       expect(ignore).toEqual(['package.xml']);
       expect(server).toBe(false);
@@ -103,18 +120,18 @@ describe('vscode-xunit-viewer extension', () => {
       reveal: jest.fn(),
       onDidDispose: jest.fn(),
     };
-    const commandHandlers = {};
-    const xunitViewerMock = jest.fn(async ({ output, title }) => {
+    const commandHandlers: Record<string, (...args: unknown[]) => Promise<void>> = {};
+    const xunitViewerMock = jest.fn(async ({ output, title }: { output: string; title: string }) => {
       await fs.mkdir(path.dirname(output), { recursive: true });
       await fs.writeFile(output, `<html><body><h1>${title}</h1></body></html>`, 'utf8');
     });
     const vscodeMock = {
       Uri: class Uri {},
       RelativePattern: class RelativePattern {
-        constructor(base, pattern) {
-          this.base = base;
-          this.pattern = pattern;
-        }
+        constructor(
+          public base: string,
+          public pattern: string,
+        ) {}
       },
       ViewColumn: { One: 1 },
       workspace: {
@@ -140,7 +157,7 @@ describe('vscode-xunit-viewer extension', () => {
         showWorkspaceFolderPick: jest.fn(),
       },
       commands: {
-        registerCommand: jest.fn((commandId, handler) => {
+        registerCommand: jest.fn((commandId: string, handler: (...args: unknown[]) => Promise<void>) => {
           commandHandlers[commandId] = handler;
           return { dispose: jest.fn() };
         }),
@@ -150,9 +167,9 @@ describe('vscode-xunit-viewer extension', () => {
     const extension = loadExtension({ vscodeMock, xunitViewerMock });
     const context = { subscriptions: [] };
 
-    extension.activate(context);
-    await commandHandlers['vscode-xunit-viewer.openReport'](workspaceFolder.uri);
-    await commandHandlers['vscode-xunit-viewer.refreshReport']();
+    extension.activate(context as never);
+    await commandHandlers['vscode-xunit-viewer.openReport']!(workspaceFolder.uri);
+    await commandHandlers['vscode-xunit-viewer.refreshReport']!();
 
     expect(context.subscriptions).toHaveLength(2);
     expect(vscodeMock.commands.registerCommand).toHaveBeenCalledTimes(2);
@@ -161,7 +178,7 @@ describe('vscode-xunit-viewer extension', () => {
     expect(panel.reveal).toHaveBeenCalledTimes(2);
     expect(xunitViewerMock).toHaveBeenCalledTimes(2);
     const normalizedStatusBarCalls = vscodeMock.window.setStatusBarMessage.mock.calls.map(
-      ([message, duration]) => [message.replaceAll('\\', '/'), duration],
+      ([message, duration]) => [(message as string).replaceAll('\\', '/'), duration],
     );
 
     expect(normalizedStatusBarCalls).toContainEqual([
@@ -173,7 +190,7 @@ describe('vscode-xunit-viewer extension', () => {
   });
 
   test('refresh command shows guidance when no report has been opened', async () => {
-    const commandHandlers = {};
+    const commandHandlers: Record<string, (...args: unknown[]) => Promise<void>> = {};
     const vscodeMock = {
       workspace: {
         workspaceFolders: [],
@@ -182,7 +199,7 @@ describe('vscode-xunit-viewer extension', () => {
         showInformationMessage: jest.fn(),
       },
       commands: {
-        registerCommand: jest.fn((commandId, handler) => {
+        registerCommand: jest.fn((commandId: string, handler: (...args: unknown[]) => Promise<void>) => {
           commandHandlers[commandId] = handler;
           return { dispose: jest.fn() };
         }),
@@ -190,9 +207,9 @@ describe('vscode-xunit-viewer extension', () => {
     };
 
     const extension = loadExtension({ vscodeMock });
-    extension.activate({ subscriptions: [] });
+    extension.activate({ subscriptions: [] } as never);
 
-    await commandHandlers['vscode-xunit-viewer.refreshReport']();
+    await commandHandlers['vscode-xunit-viewer.refreshReport']!();
 
     expect(vscodeMock.window.showInformationMessage).toHaveBeenCalledWith('Open XUnit test results first.');
 
@@ -207,7 +224,7 @@ describe('vscode-xunit-viewer extension', () => {
     };
     const emptyResultsPath = path.join(tempDir, 'empty-results');
     const ignoredXmlPath = path.join(emptyResultsPath, 'package.xml');
-    const commandHandlers = {};
+    const commandHandlers: Record<string, (...args: unknown[]) => Promise<void>> = {};
     const xunitViewerMock = jest.fn();
 
     await fs.mkdir(emptyResultsPath, { recursive: true });
@@ -216,10 +233,10 @@ describe('vscode-xunit-viewer extension', () => {
     const vscodeMock = {
       Uri: class Uri {},
       RelativePattern: class RelativePattern {
-        constructor(base, pattern) {
-          this.base = base;
-          this.pattern = pattern;
-        }
+        constructor(
+          public base: string,
+          public pattern: string,
+        ) {}
       },
       ViewColumn: { One: 1 },
       workspace: {
@@ -243,7 +260,7 @@ describe('vscode-xunit-viewer extension', () => {
         showWorkspaceFolderPick: jest.fn(),
       },
       commands: {
-        registerCommand: jest.fn((commandId, handler) => {
+        registerCommand: jest.fn((commandId: string, handler: (...args: unknown[]) => Promise<void>) => {
           commandHandlers[commandId] = handler;
           return { dispose: jest.fn() };
         }),
@@ -251,9 +268,9 @@ describe('vscode-xunit-viewer extension', () => {
     };
 
     const extension = loadExtension({ vscodeMock, xunitViewerMock });
-    extension.activate({ subscriptions: [] });
+    extension.activate({ subscriptions: [] } as never);
 
-    await commandHandlers['vscode-xunit-viewer.openReport'](workspaceFolder.uri);
+    await commandHandlers['vscode-xunit-viewer.openReport']!(workspaceFolder.uri);
 
     expect(xunitViewerMock).not.toHaveBeenCalled();
     expect(vscodeMock.window.createWebviewPanel).not.toHaveBeenCalled();

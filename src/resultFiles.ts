@@ -1,16 +1,16 @@
-const fs = require('node:fs/promises');
-const path = require('node:path');
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
-const { getVscode } = require('./vscodeHost');
+import { getVscode } from './vscodeHost';
 
-function pathExists(targetPath) {
+export function pathExists(targetPath: string): Promise<boolean> {
   return fs
     .access(targetPath)
     .then(() => true)
     .catch(() => false);
 }
 
-async function collectResultFiles(resultsPath, ignorePatterns) {
+export async function collectResultFiles(resultsPath: string, ignorePatterns: string[]): Promise<string[]> {
   const vscode = getVscode();
   const stats = await fs.stat(resultsPath);
   const searchBase = stats.isDirectory() ? resultsPath : path.dirname(resultsPath);
@@ -30,5 +30,3 @@ async function collectResultFiles(resultsPath, ignorePatterns) {
     .filter((filePath) => filePath.endsWith('.xml'))
     .sort();
 }
-
-module.exports = { pathExists, collectResultFiles };

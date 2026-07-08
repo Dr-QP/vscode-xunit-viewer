@@ -1,9 +1,11 @@
-const { VIEW_TYPE } = require('./constants');
-const { getVscode } = require('./vscodeHost');
+import type { WebviewPanel } from 'vscode';
 
-let currentPanel;
+import { VIEW_TYPE } from './constants';
+import { getVscode } from './vscodeHost';
 
-function ensurePanel(title, onDidDispose) {
+let currentPanel: WebviewPanel | undefined;
+
+export function ensurePanel(title: string, onDidDispose?: () => void): WebviewPanel {
   const vscode = getVscode();
   if (currentPanel) {
     currentPanel.title = title;
@@ -29,8 +31,6 @@ function ensurePanel(title, onDidDispose) {
   return currentPanel;
 }
 
-function resetPanel() {
+export function resetPanel(): void {
   currentPanel = undefined;
 }
-
-module.exports = { ensurePanel, resetPanel };

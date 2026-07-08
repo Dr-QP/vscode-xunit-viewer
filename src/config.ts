@@ -1,26 +1,35 @@
-const path = require('node:path');
+import path from 'node:path';
+import type { WorkspaceConfiguration, WorkspaceFolder } from 'vscode';
 
-const {
+import {
   EXTENSION_ID,
   DEFAULT_RESULTS_PATH,
   DEFAULT_OUTPUT_PATH,
   DEFAULT_IGNORE_PATTERNS,
-} = require('./constants');
-const { getVscode } = require('./vscodeHost');
+} from './constants';
+import { getVscode } from './vscodeHost';
 
-function resolveWorkspacePath(workspaceRoot, configuredPath, fallbackPath) {
+export interface ReportOptions {
+  workspaceFolder: WorkspaceFolder;
+  resultsPath: string;
+  outputPath: string;
+  title: string;
+  ignorePatterns: string[];
+}
+
+function resolveWorkspacePath(workspaceRoot: string, configuredPath: string, fallbackPath: string): string {
   const selectedPath = configuredPath && configuredPath.trim() !== '' ? configuredPath : fallbackPath;
   return path.isAbsolute(selectedPath)
     ? path.normalize(selectedPath)
     : path.join(workspaceRoot, selectedPath);
 }
 
-function getWorkspaceConfiguration(workspaceFolder) {
+function getWorkspaceConfiguration(workspaceFolder: WorkspaceFolder): WorkspaceConfiguration {
   const vscode = getVscode();
   return vscode.workspace.getConfiguration(EXTENSION_ID, workspaceFolder);
 }
 
-function buildReportOptions(workspaceFolder) {
+export function buildReportOptions(workspaceFolder: WorkspaceFolder): ReportOptions {
   const configuration = getWorkspaceConfiguration(workspaceFolder);
   const workspaceRoot = workspaceFolder.uri.fsPath;
   const titleOverride = configuration.get('title', '').trim();
@@ -38,8 +47,6 @@ function buildReportOptions(workspaceFolder) {
       DEFAULT_OUTPUT_PATH,
     ),
     title: titleOverride || `${workspaceFolder.name} XUnit Test Results`,
-    ignorePatterns: configuration.get('ignorePatterns', DEFAULT_IGNORE_PATTERNS),
+    ignorePatterns: configuration.get('ignorePatterns', [...DEFAULT_IGNORE_PATTERNS]),
   };
 }
-
-module.exports = { buildReportOptions };
