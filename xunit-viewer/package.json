@@ -47,7 +47,6 @@
   "dependencies": {
     "@uiw/react-codemirror": "^4.21.3",
     "chalk": "^5.2.0",
-    "chokidar": "^3.5.3",
     "console-clear": "^1.1.1",
     "debounce": "^1.2.1",
     "detect-file-encoding-and-language": "^2.4.0",

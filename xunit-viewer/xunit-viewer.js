@@ -12,8 +12,12 @@ import watch from './src/cli/watch.js'
 export default async (args) => {
   const logger = Logger(args.noColor)
 
+  // When the caller (e.g. the VS Code extension) already resolved the files,
+  // skip filesystem existence checks and the second recursive scan entirely.
+  const hasPreResolvedFiles = Array.isArray(args.files)
+
   const results = args.results
-  if (!fs.existsSync(results)) {
+  if (!hasPreResolvedFiles && !fs.existsSync(results)) {
     const { showHelp } = import('./src/cli/args.js')
     showHelp()
     console.log(logger.error('\n The folder/file:'), logger.file(results), logger.error('does not exist'))
@@ -21,7 +25,7 @@ export default async (args) => {
   }
 
   const runXunitViewer = async () => {
-    const files = await getFiles(logger, args)
+    const files = hasPreResolvedFiles ? args.files : await getFiles(logger, args)
     const suites = await getSuites(logger, files)
     const description = getDescription(suites)
     if (args.console) terminal(suites, logger, description, args)

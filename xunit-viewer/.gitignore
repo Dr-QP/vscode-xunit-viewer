@@ -15,6 +15,9 @@
 # production
 /build
 
+# generated frontend assets copied by the `deploy` script (built at extension build time)
+/src/cli/static
+
 # misc
 .DS_Store
 .env.local

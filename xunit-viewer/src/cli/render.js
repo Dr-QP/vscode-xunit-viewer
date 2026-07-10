@@ -7,7 +7,14 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const staticDir = path.resolve(__dirname, './static')
+// Frontend assets are produced by the build (no longer checked in). In the
+// bundled extension they sit next to render.js under `dist/static`; for the
+// standalone CLI they come from the fresh React build output under `build/static`.
+const staticDirCandidates = [
+  path.resolve(__dirname, './static'),
+  path.resolve(__dirname, '../../build/static')
+]
+const staticDir = staticDirCandidates.find(dir => fs.existsSync(dir)) || staticDirCandidates[0]
 
 const getHTML = (type) => {
   const dir = path.join(staticDir, type)
