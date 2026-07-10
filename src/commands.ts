@@ -7,7 +7,7 @@ import { buildReportOptions } from './config';
 import { collectResultFiles, readResultFiles, statUri } from './resultFiles';
 import { generateReport, type GeneratedReport } from './reportGenerator';
 import { createReportWatcher } from './reportWatcher';
-import { ensurePanel, resetPanel } from './panel';
+import { ensurePanel, getPanel, resetPanel } from './panel';
 
 interface ReportContext {
   workspaceFolder: WorkspaceFolder;
@@ -79,7 +79,7 @@ async function showReport(workspaceFolder: WorkspaceFolder): Promise<GeneratedRe
     stat,
     ignorePatterns,
     onChange: () => {
-      void regenerateReport(workspaceFolder);
+      void updateReport(workspaceFolder);
     },
   });
 
@@ -98,9 +98,44 @@ function reportFailure(error: unknown): void {
   vscode.window.showErrorMessage(`XUnit Viewer failed: ${message}`);
 }
 
-async function regenerateReport(workspaceFolder: WorkspaceFolder): Promise<void> {
+/**
+ * Watcher-driven live update: push the changed file payload into the already
+ * open webview without reassigning `panel.webview.html`. This avoids a full
+ * reload so React re-renders in place and view state (scroll, find widget) is
+ * retained. The on-disk `outputPath` report is still regenerated so an
+ * externally opened copy stays current.
+ */
+async function updateReport(workspaceFolder: WorkspaceFolder): Promise<void> {
+  const panel = getPanel();
+  if (!panel) {
+    return;
+  }
+
   try {
-    await showReport(workspaceFolder);
+    const vscode = getVscode();
+    const reportOptions = buildReportOptions(workspaceFolder);
+    const { resultsPath, outputPath, title, ignorePatterns } = reportOptions;
+    const resultsUri = vscode.Uri.file(resultsPath);
+
+    const stat = await statUri(resultsUri);
+    if (!stat) {
+      // The results scope vanished mid-run; keep the existing report as-is.
+      return;
+    }
+
+    const resultFiles = await collectResultFiles(resultsUri, stat, ignorePatterns);
+    if (resultFiles.length === 0) {
+      return;
+    }
+
+    const files = await readResultFiles(resultFiles);
+
+    // Uncompressed `{ file, contents }` payloads, matching the update channel the
+    // report shell's bootstrap forwards to the app's `xunit:update` handler.
+    await panel.webview.postMessage({ type: 'xunit:update', files });
+
+    // Keep the on-disk report current for any externally opened copy.
+    await generateReport({ files, outputPath, title });
   } catch (error) {
     reportFailure(error);
   }

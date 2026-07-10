@@ -98,6 +98,22 @@
         window.files = {{{files}}}
     </script>
     <script>
+        // VS Code webview bridge: adapt host `postMessage` updates into the
+        // `xunit:update` CustomEvent the app subscribes to. Inert outside VS Code.
+        if (typeof acquireVsCodeApi === 'function') {
+            // Retained so the extension can post future updates to this webview.
+            window.__vscode = acquireVsCodeApi();
+            window.addEventListener('message', function (event) {
+                var msg = event.data;
+                if (msg && msg.type === 'xunit:update') {
+                    window.dispatchEvent(
+                        new CustomEvent('xunit:update', { detail: { files: msg.files } })
+                    );
+                }
+            });
+        }
+    </script>
+    <script>
         {{{scripts}}}
     </script>
 </body>

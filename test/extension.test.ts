@@ -61,7 +61,7 @@ interface VscodeMockHandles {
   mock: Record<string, unknown>;
   panel: {
     title: string;
-    webview: { html: string };
+    webview: { html: string; postMessage: jest.Mock };
     reveal: jest.Mock;
     onDidDispose: jest.Mock;
     dispose: () => void;
@@ -80,7 +80,7 @@ function createVscodeMock(options: VscodeMockOptions = {}): VscodeMockHandles {
 
   const panel = {
     title: '',
-    webview: { html: '' },
+    webview: { html: '', postMessage: jest.fn(async () => true) },
     reveal: jest.fn(),
     onDidDispose: jest.fn((handler: unknown) => {
       panelDisposeHandler = handler as () => void;
@@ -392,6 +392,64 @@ describe('vscode-xunit-viewer extension', () => {
     const activeWatcher = handles.watchers[handles.watchers.length - 1]!;
     handles.panel.dispose();
     expect(activeWatcher.dispose).toHaveBeenCalledTimes(1);
+
+    extension.deactivate();
+  });
+
+  test('a watcher change posts a live update instead of reassigning the webview html', async () => {
+    jest.useFakeTimers();
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'xunit-viewer-live-'));
+    const resultsPath = path.join(tempDir, 'build');
+    const workspaceFolder = {
+      name: 'demo-workspace',
+      uri: { fsPath: tempDir },
+    };
+    const xunitViewerMock = jest.fn(async ({ output, title }: { output: string; title: string }) => {
+      await fs.mkdir(path.dirname(output), { recursive: true });
+      await fs.writeFile(output, `<html><body><h1>${title}</h1></body></html>`, 'utf8');
+    });
+    const handles = createVscodeMock({
+      workspaceFolders: [workspaceFolder],
+      configuration: {
+        resultsPath,
+        outputPath: path.join(tempDir, 'reports', 'output.html'),
+        title: 'Workspace Report',
+        ignorePatterns: ['package.xml'],
+      },
+      findFiles: async () => [{ fsPath: path.join(resultsPath, 'results.xml') }],
+    });
+
+    const extension = loadExtension({ vscodeMock: handles.mock, xunitViewerMock });
+    extension.activate({ subscriptions: [] } as never);
+    await handles.commandHandlers['vscode-xunit-viewer.openReport']!(workspaceFolder.uri);
+
+    const htmlAfterOpen = handles.panel.webview.html;
+    expect(xunitViewerMock).toHaveBeenCalledTimes(1);
+    expect(handles.panel.webview.postMessage).not.toHaveBeenCalled();
+
+    // Fire a watched change; the debounced handler should push a live update.
+    const captured = handles.watchers[handles.watchers.length - 1]!;
+    captured.handlers.change[0]!({ fsPath: path.join(resultsPath, 'results.xml') });
+    jest.advanceTimersByTime(250);
+    jest.useRealTimers();
+    // Flush the fire-and-forget update chain (collect → read → post → regenerate).
+    for (let i = 0; i < 10; i += 1) {
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+
+    // The webview updates via message, not by reassigning its html (no reload).
+    expect(handles.panel.webview.html).toBe(htmlAfterOpen);
+    expect(handles.panel.webview.postMessage).toHaveBeenCalledTimes(1);
+    const message = handles.panel.webview.postMessage.mock.calls[0]![0] as {
+      type: string;
+      files: Array<{ file: string; contents: string }>;
+    };
+    expect(message.type).toBe('xunit:update');
+    expect(message.files).toEqual([
+      { file: path.join(resultsPath, 'results.xml'), contents: '<testsuite name="x" />' },
+    ]);
+    // The on-disk report is still regenerated so an external copy stays current.
+    expect(xunitViewerMock).toHaveBeenCalledTimes(2);
 
     extension.deactivate();
   });
