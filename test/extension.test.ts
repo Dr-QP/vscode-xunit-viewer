@@ -230,17 +230,9 @@ describe('vscode-xunit-viewer extension', () => {
       files: Array<{ file: string; contents: string }>;
       output: string;
       title: string;
-      results?: string;
-      ignore?: string[];
-      server: boolean;
-      script: boolean;
     }
-    const xunitViewerMock = jest.fn(async ({ files, output, title, results, ignore, server, script }: XunitViewerArgs) => {
+    const xunitViewerMock = jest.fn(async ({ files, output, title }: XunitViewerArgs) => {
       expect(files).toEqual([{ file: '/results/results.xml', contents: '<testsuite />' }]);
-      expect(results).toBeUndefined();
-      expect(ignore).toBeUndefined();
-      expect(server).toBe(false);
-      expect(script).toBe(true);
 
       await fs.mkdir(path.dirname(output), { recursive: true });
       await fs.writeFile(output, `<html><body><h1>${title}</h1></body></html>`, 'utf8');

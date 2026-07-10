@@ -24,7 +24,7 @@ const getHTML = (type) => {
     .join('\n')
 }
 
-export default (logger, files, description, { title = 'Xunit Viewer', brand, favicon }, useSockets = false) => {
+export default (logger, files, description, { title = 'Xunit Viewer', brand, favicon }) => {
   const scripts = getHTML('js')
   const styles = getHTML('css')
 
@@ -40,7 +40,6 @@ export default (logger, files, description, { title = 'Xunit Viewer', brand, fav
     icon: brand || 'https://lukejpreston.github.io/xunit-viewer/icon.png',
     favicon: favicon || 'https://lukejpreston.github.io/xunit-viewer/favicon.ico',
     brand,
-    description,
-    useSockets
+    description
   })
 }

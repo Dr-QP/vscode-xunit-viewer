@@ -41,8 +41,6 @@ export async function generateReport({
     files,
     output: outputPath,
     title,
-    server: false,
-    script: true,
   });
 
   const html = await fs.readFile(outputPath, 'utf8');
