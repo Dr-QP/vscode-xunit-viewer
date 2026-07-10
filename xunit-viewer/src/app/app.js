@@ -66,13 +66,15 @@ const App = ({ files, title, brand }) => {
     parseAll(dispatch, files, {})
   }
 
-  window.sockets = window.sockets || null
+  // Transport-agnostic live update: the host (e.g. the VS Code webview bootstrap)
+  // dispatches a `xunit:update` CustomEvent carrying `{ files }` with raw,
+  // uncompressed XML contents. React re-renders in place — no reload.
   useEffect(() => {
-    if (window.sockets === null && 'io' in window) {
-      window.sockets = window.io()
-      window.sockets.on('update', onUpdate)
-    }
-  })
+    const handler = (event) => onUpdate(event.detail)
+    window.addEventListener('xunit:update', handler)
+    return () => window.removeEventListener('xunit:update', handler)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return <div>
     <Hero

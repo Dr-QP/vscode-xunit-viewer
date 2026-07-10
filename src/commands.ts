@@ -1,19 +1,25 @@
 import path from 'node:path';
-import type { ConfigurationChangeEvent, Uri, WorkspaceFolder } from 'vscode';
+import type { ConfigurationChangeEvent, Disposable, Uri, WorkspaceFolder } from 'vscode';
 
 import { EXTENSION_ID } from './constants';
 import { getVscode } from './vscodeHost';
 import { buildReportOptions } from './config';
-import { pathExists, collectResultFiles } from './resultFiles';
+import { collectResultFiles, readResultFiles, statUri } from './resultFiles';
 import { generateReport, type GeneratedReport } from './reportGenerator';
-import { ensurePanel, resetPanel } from './panel';
+import { createReportWatcher } from './reportWatcher';
+import { ensurePanel, getPanel, resetPanel } from './panel';
 
 interface ReportContext {
   workspaceFolder: WorkspaceFolder;
   outputPath: string;
+  watcher: Disposable;
 }
 
 let currentContext: ReportContext | undefined;
+
+function disposeCurrentWatcher(): void {
+  currentContext?.watcher.dispose();
+}
 
 async function pickWorkspaceFolder(commandTarget: Uri | unknown): Promise<WorkspaceFolder | undefined> {
   const vscode = getVscode();
@@ -39,33 +45,100 @@ async function showReport(workspaceFolder: WorkspaceFolder): Promise<GeneratedRe
   const vscode = getVscode();
   const reportOptions = buildReportOptions(workspaceFolder);
   const { resultsPath, outputPath, title, ignorePatterns } = reportOptions;
+  const resultsUri = vscode.Uri.file(resultsPath);
 
-  if (!(await pathExists(resultsPath))) {
+  const stat = await statUri(resultsUri);
+  if (!stat) {
     throw new Error(
       `Results path does not exist: ${resultsPath}. Run colcon tests first or update ${EXTENSION_ID}.resultsPath.`,
     );
   }
 
-  const resultFiles = await collectResultFiles(resultsPath, ignorePatterns);
+  const resultFiles = await collectResultFiles(resultsUri, stat, ignorePatterns);
   if (resultFiles.length === 0) {
     throw new Error(
       `No usable xUnit XML files were found in ${resultsPath}. Run colcon tests first or update ${EXTENSION_ID}.resultsPath or ${EXTENSION_ID}.ignorePatterns.`,
     );
   }
 
-  const report = await generateReport(reportOptions);
+  const files = await readResultFiles(resultFiles);
+  const report = await generateReport({ files, outputPath, title });
+
   const panel = ensurePanel(title, () => {
+    disposeCurrentWatcher();
     currentContext = undefined;
   });
   panel.webview.html = report.html;
   panel.reveal(vscode.ViewColumn.One);
 
+  // Replace any previous watcher so refresh always tracks the currently active
+  // results scope and ignore rules (same filter path as discovery).
+  disposeCurrentWatcher();
+  const watcher = createReportWatcher({
+    resultsUri,
+    stat,
+    ignorePatterns,
+    onChange: () => {
+      void updateReport(workspaceFolder);
+    },
+  });
+
   currentContext = {
     workspaceFolder,
     outputPath,
+    watcher,
   };
 
   return report;
+}
+
+function reportFailure(error: unknown): void {
+  const vscode = getVscode();
+  const message = error instanceof Error ? error.message : String(error);
+  vscode.window.showErrorMessage(`XUnit Viewer failed: ${message}`);
+}
+
+/**
+ * Watcher-driven live update: push the changed file payload into the already
+ * open webview without reassigning `panel.webview.html`. This avoids a full
+ * reload so React re-renders in place and view state (scroll, find widget) is
+ * retained. The on-disk `outputPath` report is still regenerated so an
+ * externally opened copy stays current.
+ */
+async function updateReport(workspaceFolder: WorkspaceFolder): Promise<void> {
+  const panel = getPanel();
+  if (!panel) {
+    return;
+  }
+
+  try {
+    const vscode = getVscode();
+    const reportOptions = buildReportOptions(workspaceFolder);
+    const { resultsPath, outputPath, title, ignorePatterns } = reportOptions;
+    const resultsUri = vscode.Uri.file(resultsPath);
+
+    const stat = await statUri(resultsUri);
+    if (!stat) {
+      // The results scope vanished mid-run; keep the existing report as-is.
+      return;
+    }
+
+    const resultFiles = await collectResultFiles(resultsUri, stat, ignorePatterns);
+    if (resultFiles.length === 0) {
+      return;
+    }
+
+    const files = await readResultFiles(resultFiles);
+
+    // Uncompressed `{ file, contents }` payloads, matching the update channel the
+    // report shell's bootstrap forwards to the app's `xunit:update` handler.
+    await panel.webview.postMessage({ type: 'xunit:update', files });
+
+    // Keep the on-disk report current for any externally opened copy.
+    await generateReport({ files, outputPath, title });
+  } catch (error) {
+    reportFailure(error);
+  }
 }
 
 export async function openReport(commandTarget?: Uri | unknown): Promise<void> {
@@ -81,8 +154,7 @@ export async function openReport(commandTarget?: Uri | unknown): Promise<void> {
     const relativeOutputPath = path.relative(workspaceFolder.uri.fsPath, report.outputPath);
     vscode.window.setStatusBarMessage(`XUnit Viewer refreshed ${relativeOutputPath}`, 4000);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    vscode.window.showErrorMessage(`XUnit Viewer failed: ${message}`);
+    reportFailure(error);
   }
 }
 
@@ -110,6 +182,7 @@ export async function handleConfigurationChange(event: ConfigurationChangeEvent)
 }
 
 export function resetState(): void {
+  disposeCurrentWatcher();
   currentContext = undefined;
   resetPanel();
 }

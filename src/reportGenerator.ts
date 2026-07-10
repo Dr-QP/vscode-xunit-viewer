@@ -2,11 +2,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { XunitViewer } from 'xunit-viewer';
 
+import type { ResultFilePayload } from './resultFiles';
+
 export interface GenerateReportOptions {
-  resultsPath: string;
+  files: ResultFilePayload[];
   outputPath: string;
   title: string;
-  ignorePatterns: string[];
 }
 
 export interface GeneratedReport {
@@ -27,21 +28,19 @@ function getXunitViewer(): XunitViewer {
 }
 
 export async function generateReport({
-  resultsPath,
+  files,
   outputPath,
   title,
-  ignorePatterns,
 }: GenerateReportOptions): Promise<GeneratedReport> {
   const xunitViewer = getXunitViewer();
 
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
+  // The extension owns discovery; the renderer receives an already-resolved
+  // file payload rather than rescanning the filesystem with its own semantics.
   await xunitViewer({
-    results: resultsPath,
+    files,
     output: outputPath,
     title,
-    ignore: ignorePatterns,
-    server: false,
-    script: true,
   });
 
   const html = await fs.readFile(outputPath, 'utf8');

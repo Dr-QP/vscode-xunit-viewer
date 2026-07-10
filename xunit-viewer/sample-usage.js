@@ -1,9 +1,0 @@
-import xunitViewer from './xunit-viewer'
-
-xunitViewer({
-  server: false,
-  results: 'data',
-  ignore: ['_thingy', 'invalid'],
-  title: 'Xunit View Sample Tests',
-  output: 'output.html'
-})

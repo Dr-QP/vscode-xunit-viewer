@@ -31,6 +31,11 @@ export function ensurePanel(title: string, onDidDispose?: () => void): WebviewPa
   return currentPanel;
 }
 
+/** The currently open report panel, or `undefined` when none is open. */
+export function getPanel(): WebviewPanel | undefined {
+  return currentPanel;
+}
+
 export function resetPanel(): void {
   currentPanel = undefined;
 }
