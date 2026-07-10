@@ -3,7 +3,7 @@
   "publisher": "Dr-QP",
   "displayName": "XUnit Viewer",
   "description": "Generate and browse ROS 2 and colcon XUnit test results inside VS Code.",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "MIT",
   "engines": {
     "vscode": "^1.94.0"
