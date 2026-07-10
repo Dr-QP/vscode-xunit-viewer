@@ -1,0 +1,38 @@
+diff --git a/scripts/build.js b/scripts/build.js
+index 7a3a635a5d3b9448e02e80f5d44b0f6056edc316..71ee333776d8ddf7b0fa362bf0006978bde550e7 100644
+--- a/scripts/build.js
++++ b/scripts/build.js
+@@ -76,7 +76,7 @@ checkBrowsers(paths.appPath, isInteractive)
+     return build(previousFileSizes);
+   })
+   .then(
+-    ({ stats, previousFileSizes, warnings }) => {
++    ({ stats, previousFileSizes, warnings, compiler }) => {
+       if (warnings.length) {
+         console.log(chalk.yellow('Compiled with warnings.\n'));
+         console.log(warnings.join('\n\n'));
+@@ -115,6 +115,16 @@ checkBrowsers(paths.appPath, isInteractive)
+         buildFolder,
+         useYarn
+       );
++
++      // Close the compiler so webpack 5 flushes its persistent filesystem
++      // cache to disk (it is only written on close). Upstream fix from the
++      // unmerged CRA PR facebook/create-react-app#12890.
++      compiler.close(err => {
++        if (err && err.message) {
++          console.log(err.message);
++          process.exit(1);
++        }
++      });
+     },
+     err => {
+       const tscCompileOnError = process.env.TSC_COMPILE_ON_ERROR === 'true';
+@@ -203,6 +213,7 @@ function build(previousFileSizes) {
+         stats,
+         previousFileSizes,
+         warnings: messages.warnings,
++        compiler,
+       };
+ 
+       if (writeStatsJson) {

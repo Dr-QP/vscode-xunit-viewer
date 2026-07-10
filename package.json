@@ -98,5 +98,8 @@
     "jest": "^30.2.0",
     "ts-jest": "^29.4.11",
     "typescript": "~6.0.3"
+  },
+  "patchedDependencies": {
+    "react-scripts@5.0.1": "patches/react-scripts@5.0.1.patch"
   }
 }
