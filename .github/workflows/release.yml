@@ -110,7 +110,7 @@ jobs:
 
       - name: Package VSIX
         shell: bash
-        run: bunx @vscode/vsce package -o "${VSIX_NAME}"
+        run: bun run package -o "${VSIX_NAME}"
 
       - name: Attach VSIX to release
         uses: softprops/action-gh-release@v2
