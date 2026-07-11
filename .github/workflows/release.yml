@@ -33,9 +33,22 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
+      - name: Check for existing tag
+        id: check-tag
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          version="${{ github.event.inputs.version }}"
+
+          if git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then
+            echo "tag_exists=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "tag_exists=false" >> "${GITHUB_OUTPUT}"
+          fi
+
       - name: Prepare release branch
         id: prepare-release-branch
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' && steps.check-tag.outputs.tag_exists != 'true'
         shell: bash
         run: |
           git config user.name "GitHub Actions"
@@ -55,7 +68,7 @@ jobs:
           fi
 
       - name: Create tag for release
-        if: github.event_name == 'workflow_dispatch' && steps.prepare-release-branch.outputs.tag_created != 'true'
+        if: github.event_name == 'workflow_dispatch' && steps.check-tag.outputs.tag_exists != 'true' && steps.prepare-release-branch.outputs.tag_created != 'true'
         shell: bash
         run: |
           git tag -a "v${{ github.event.inputs.version }}" -m "Release v${{ github.event.inputs.version }}"
